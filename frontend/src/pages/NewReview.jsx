@@ -8,6 +8,7 @@ import api from "../lib/api";
 const LANGUAGES = [
   "javascript", "typescript", "python", "java",
   "go", "rust", "cpp", "c", "csharp", "ruby",
+  "php", "swift",
 ];
 
 const STARTER_CODE = {
@@ -102,7 +103,7 @@ const NewReview = () => {
               {loading ? "Submitting..." : "Run AI Review"}
             </button>
             <p className="text-xs text-[#45475a] text-center mt-2">
-              Uses Gemini 1.5 Flash · Free tier
+              Uses Groq AI
             </p>
           </div>
         </div>

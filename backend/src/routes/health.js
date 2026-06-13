@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const prisma = require("../lib/prisma");
 const { redis, reviewQueue } = require("../lib/queue");
-const { redisBreaker, geminiBreaker } = require("../circuit-breaker");
+const { redisBreaker, groqBreaker } = require("../circuit-breaker");
 const { logger } = require("../logger");
 
 const startTime = Date.now();
@@ -63,7 +63,7 @@ router.get("/ready", async (req, res) => {
   // ── Circuit breaker states ────────────────────
   checks.circuit_breakers = {
     redis: redisBreaker.getState(),
-    gemini: geminiBreaker.getState(),
+    groq: groqBreaker.getState(),
   };
 
   const status = allHealthy ? 200 : 503;
@@ -106,7 +106,7 @@ router.get("/metrics", async (req, res) => {
       queue: queueCounts,
       circuit_breakers: {
         redis: redisBreaker.getState().state,
-        gemini: geminiBreaker.getState().state,
+        groq: groqBreaker.getState().state,
       },
       memory: {
         heap_used_mb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),

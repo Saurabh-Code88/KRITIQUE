@@ -83,10 +83,10 @@ const redisBreaker = new CircuitBreaker({
   recoveryTimeout: 30000,
 });
 
-const geminiBreaker = new CircuitBreaker({
-  name: "gemini",
+const groqBreaker = new CircuitBreaker({
+  name: "groq",
   failureThreshold: 3,
   recoveryTimeout: 60000,
 });
 
-module.exports = { CircuitBreaker, redisBreaker, geminiBreaker };
+module.exports = { CircuitBreaker, redisBreaker, groqBreaker };

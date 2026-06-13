@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Kritique backend - AI code review API",
   "main": "src/index.js",
+  "engines": {
+    "node": ">=20 <25",
+    "npm": ">=10"
+  },
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
@@ -10,6 +14,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "db:migrate": "npx prisma migrate dev --schema src/prisma/schema.prisma",
+    "db:deploy": "npx prisma migrate deploy --schema src/prisma/schema.prisma",
     "db:generate": "npx prisma generate --schema src/prisma/schema.prisma",
     "db:studio": "npx prisma studio --schema src/prisma/schema.prisma"
   },

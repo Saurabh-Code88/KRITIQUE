@@ -111,7 +111,7 @@ const ReviewPage = () => {
               {review?.title || "Review"}
             </h1>
             <p className="text-xs text-[#6c7086]">
-              {review?.language} ·{" "}
+              {review?.language} -{" "}
               {review?.createdAt
                 ? new Date(review.createdAt).toLocaleString()
                 : ""}

@@ -3,7 +3,8 @@ services:
     name: kritique-backend
     runtime: node
     rootDir: backend
-    buildCommand: npm ci --include=dev && npx prisma generate --schema src/prisma/schema.prisma
+    buildCommand: npm ci --include=dev && npm run db:generate
+    preDeployCommand: npm run db:deploy
     startCommand: npm start
     healthCheckPath: /health
     envVars:
@@ -27,7 +28,7 @@ services:
     name: kritique-worker
     runtime: node
     rootDir: worker
-    buildCommand: npm ci --include=dev && npx prisma generate --schema prisma/schema.prisma
+    buildCommand: npm ci --include=dev && npm run db:generate
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -41,10 +42,10 @@ services:
           type: keyvalue
           name: kritique-redis
           property: connectionString
-      - key: GEMINI_API_KEY
+      - key: GROQ_API_KEY
         sync: false
-      - key: GEMINI_MODEL
-        value: gemini-2.5-flash
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
 
   - type: web
     name: kritique-frontend

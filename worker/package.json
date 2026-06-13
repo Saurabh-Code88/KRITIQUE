@@ -3,10 +3,15 @@
   "version": "1.0.0",
   "description": "Kritique worker - processes AI review jobs from Bull queue",
   "main": "src/index.js",
+  "engines": {
+    "node": ">=20 <25",
+    "npm": ">=10"
+  },
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "test": "jest"
+    "test": "jest",
+    "db:generate": "npx prisma generate --schema prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^5.13.0",

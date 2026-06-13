@@ -72,15 +72,20 @@ const processReview = async (job) => {
   let fullResult = "";
 
   try {
-    const prompt = buildReviewPrompt(code, language);
+    const { system, user } = buildReviewPrompt(code, language);
 
     // ── Stream from Groq ─────────────────────────
+    // System message: review rules, format, persona (highest instruction priority)
+    // User message: the code to review + language checklist
     const stream = await groq.chat.completions.create({
       model: GROQ_MODEL,
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
       stream: true,
       temperature: 0.3,
-      max_tokens: 4096,
+      max_tokens: 8192,
     });
 
     for await (const chunk of stream) {
