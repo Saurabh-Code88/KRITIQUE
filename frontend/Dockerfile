@@ -3,10 +3,13 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 
-EXPOSE 5173
+RUN npm run build
 
-CMD ["npm", "run", "dev", "--", "--host"]
+ENV NODE_ENV=production
+EXPOSE 3000
+
+CMD ["npx", "serve", "dist", "-s", "-l", "3000"]

@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
 const { createServer } = require("http");
 
 const authRoutes = require("./routes/auth");
@@ -15,8 +16,14 @@ const app = express();
 const httpServer = createServer(app);
 
 // ─── Middleware ──────────────────────────────────
+app.set("trust proxy", 1); // trust first proxy (Render, Railway, etc.)
+app.use(helmet());
+
+const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  origin: allowedOrigins,
   credentials: true,
 }));
 app.use(express.json({ limit: "1mb" }));
