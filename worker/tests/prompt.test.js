@@ -4,48 +4,51 @@ describe("buildReviewPrompt", () => {
   const sampleCode = `function add(a, b) { return a + b; }`;
 
   test("includes the language in the prompt", () => {
-    const prompt = buildReviewPrompt(sampleCode, "javascript");
-    expect(prompt).toContain("javascript");
+    const { user } = buildReviewPrompt(sampleCode, "javascript");
+    expect(user).toContain("javascript");
   });
 
   test("includes the code verbatim", () => {
-    const prompt = buildReviewPrompt(sampleCode, "javascript");
-    expect(prompt).toContain(sampleCode);
+    const { user } = buildReviewPrompt(sampleCode, "javascript");
+    expect(user).toContain(sampleCode);
   });
 
   test("includes all required review sections", () => {
-    const prompt = buildReviewPrompt(sampleCode, "python");
-    expect(prompt).toContain("Summary");
-    expect(prompt).toContain("Strengths");
-    expect(prompt).toContain("Issues Found");
-    expect(prompt).toContain("Performance");
-    expect(prompt).toContain("Security");
-    expect(prompt).toContain("Score");
+    const { system } = buildReviewPrompt(sampleCode, "python");
+    expect(system).toContain("Summary");
+    expect(system).toContain("Strengths");
+    expect(system).toContain("Issues Found");
+    expect(system).toContain("Performance");
+    expect(system).toContain("Security");
+    expect(system).toContain("Score");
   });
 
   test("includes severity levels", () => {
-    const prompt = buildReviewPrompt(sampleCode, "python");
-    expect(prompt).toContain("Critical");
-    expect(prompt).toContain("Major");
-    expect(prompt).toContain("Minor");
+    const { system } = buildReviewPrompt(sampleCode, "python");
+    expect(system).toContain("Critical");
+    expect(system).toContain("Major");
+    expect(system).toContain("Minor");
   });
 
   test("wraps code in a code block", () => {
-    const prompt = buildReviewPrompt(sampleCode, "go");
-    expect(prompt).toContain("```go");
-    expect(prompt).toContain("```");
+    const { user } = buildReviewPrompt(sampleCode, "go");
+    expect(user).toContain("```go");
+    expect(user).toContain("```");
   });
 
   test("handles multi-line code", () => {
     const multiLine = `function foo() {\n  const x = 1;\n  return x;\n}`;
-    const prompt = buildReviewPrompt(multiLine, "javascript");
-    expect(prompt).toContain(multiLine);
+    const { user } = buildReviewPrompt(multiLine, "javascript");
+    expect(user).toContain(multiLine);
   });
 
   test("handles different languages without error", () => {
     const langs = ["typescript", "python", "go", "rust", "java", "cpp"];
     langs.forEach((lang) => {
-      expect(() => buildReviewPrompt(sampleCode, lang)).not.toThrow();
+      expect(buildReviewPrompt(sampleCode, lang)).toEqual({
+        system: expect.any(String),
+        user: expect.any(String),
+      });
     });
   });
 });

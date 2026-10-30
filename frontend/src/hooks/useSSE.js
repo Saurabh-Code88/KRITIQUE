@@ -38,6 +38,8 @@ const useSSE = (reviewId) => {
 
         if (data.type === "token") {
           setContent((prev) => prev + data.text);
+        } else if (data.type === "snapshot") {
+          setContent(data.text);
         } else if (data.type === "done") {
           setStatus("done");
           es.close();

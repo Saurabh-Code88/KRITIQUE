@@ -12,7 +12,7 @@ const prisma = require("../lib/prisma");
  * - Streams AI tokens as SSE events to the client
  * - Sends DONE or ERROR event to close the connection
  */
-router.get("/:reviewId", async (req, res) => {
+router.get("/:reviewId", async (req, res, next) => {
   // ── Auth via query param (SSE limitation) ─────
   const token = req.query.token;
   if (!token) {
@@ -29,70 +29,121 @@ router.get("/:reviewId", async (req, res) => {
   const { reviewId } = req.params;
 
   // Verify review belongs to user
-  const review = await prisma.review.findFirst({
-    where: { id: reviewId, userId: user.id },
-  });
-  if (!review) {
-    return res.status(404).json({ error: "Review not found" });
-  }
-
-  // ── If already completed, stream cached result ─
-  if (review.status === "COMPLETED" && review.result) {
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-    res.flushHeaders();
-    res.write(`data: ${JSON.stringify({ type: "token", text: review.result })}\n\n`);
-    res.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);
-    return res.end();
-  }
-
-  // ── Set SSE headers ───────────────────────────
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.setHeader("X-Accel-Buffering", "no"); // Disable nginx buffering
-  res.flushHeaders();
-
-  // ── Heartbeat to keep connection alive ─────────
-  const heartbeat = setInterval(() => {
-    res.write(`: heartbeat\n\n`);
-  }, 15000);
-
-  // ── Subscribe to Redis channel ─────────────────
   const channel = reviewChannel(reviewId);
-  const subscriber = redisSub.duplicate();
-
-  await subscriber.subscribe(channel);
-
-  subscriber.on("message", (ch, message) => {
-    if (ch !== channel) return;
-    try {
-      const data = JSON.parse(message);
-      res.write(`data: ${JSON.stringify(data)}\n\n`);
-
-      if (data.type === "done" || data.type === "error") {
-        cleanup();
-      }
-    } catch (e) {
-      console.error("SSE parse error:", e);
-    }
-  });
-
+  let subscriber;
+  let heartbeat;
   let cleaningUp = false;
+
+  const sendEvent = (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
   const cleanup = () => {
     if (cleaningUp) return;
     cleaningUp = true;
-    
+
     clearInterval(heartbeat);
-    subscriber.unsubscribe(channel).catch(() => {});
-    subscriber.quit().catch(() => {});
+    if (subscriber) {
+      subscriber.unsubscribe(channel).catch((err) => {
+        console.error("SSE unsubscribe failed:", err);
+      });
+      subscriber.quit().catch((err) => {
+        console.error("SSE subscriber shutdown failed:", err);
+      });
+    }
     if (!res.writableEnded) {
       res.end();
     }
   };
 
-  req.on("close", cleanup);
+  try {
+    const review = await prisma.review.findFirst({
+      where: { id: reviewId, userId: user.id },
+    });
+    if (!review) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders();
+
+    if (review.status === "COMPLETED") {
+      sendEvent({ type: "snapshot", text: review.result || "" });
+      sendEvent({ type: "done" });
+      return res.end();
+    }
+
+    if (review.status === "FAILED") {
+      sendEvent({ type: "error", message: "AI review failed. Please try again." });
+      return res.end();
+    }
+
+    subscriber = redisSub.duplicate();
+    res.on("close", cleanup);
+    subscriber.on("message", (ch, message) => {
+      if (ch !== channel || cleaningUp) return;
+      try {
+        const data = JSON.parse(message);
+        sendEvent(data);
+        if (data.type === "done" || data.type === "error") {
+          cleanup();
+        }
+      } catch (err) {
+        console.error("SSE message handling failed:", err);
+      }
+    });
+    subscriber.on("error", (err) => {
+      console.error("SSE Redis subscriber error:", err);
+      if (!res.writableEnded) {
+        sendEvent({ type: "error", message: "Review stream unavailable. Please refresh." });
+      }
+      cleanup();
+    });
+
+    await subscriber.subscribe(channel);
+
+    if (cleaningUp) return;
+
+    heartbeat = setInterval(() => {
+      if (!res.writableEnded) {
+        res.write(": heartbeat\n\n");
+      }
+    }, 15000);
+
+    // Recheck after subscribing so completion during setup cannot be missed.
+    const currentReview = await prisma.review.findFirst({
+      where: { id: reviewId, userId: user.id },
+      select: { status: true, result: true },
+    });
+    if (cleaningUp || res.writableEnded) return;
+    if (!currentReview) {
+      sendEvent({ type: "error", message: "Review not found." });
+      cleanup();
+      return;
+    }
+
+    if (currentReview.status === "COMPLETED") {
+      sendEvent({ type: "snapshot", text: currentReview.result || "" });
+      sendEvent({ type: "done" });
+      cleanup();
+    } else if (currentReview.status === "FAILED") {
+      sendEvent({ type: "error", message: "AI review failed. Please try again." });
+      cleanup();
+    }
+  } catch (err) {
+    if (res.headersSent) {
+      console.error("SSE connection setup failed:", err);
+      if (!res.writableEnded) {
+        sendEvent({ type: "error", message: "Review stream unavailable. Please refresh." });
+      }
+      cleanup();
+    } else {
+      next(err);
+    }
+  }
 });
 
 module.exports = router;

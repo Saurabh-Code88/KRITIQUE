@@ -168,6 +168,8 @@ npm start
 
 The worker is a background worker. Do not create it as a web service; it intentionally does not bind to an HTTP port.
 
+GitHub Actions runs tests and Docker build checks; it does not deploy. To deploy, connect the repository to Render as a Blueprint and configure the unsynced variables above. Configure Render's automatic-deploy behavior separately from the CI workflow.
+
 ## Deployment Smoke Test
 
 After every deploy:
@@ -187,6 +189,8 @@ Then test the full user flow:
 6. Refresh the review page and confirm the saved result still appears.
 7. Check backend logs for API and SSE activity.
 8. Check worker logs for Groq streaming and completion.
+
+If a review finishes before its browser stream connects, the stream endpoint replays the saved result.
 
 ## Verification Commands
 

@@ -123,28 +123,3 @@ jobs:
           sleep 10
           docker compose ps
           docker compose down
-
-  # ── Job 4: Deploy (main branch only) ─────────────────────────
-  deploy:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: [docker-build]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy via SSH
-        # Uncomment and configure when you have a server (Render/Railway/EC2)
-        # uses: appleboy/ssh-action@v1.0.0
-        # with:
-        #   host: ${{ secrets.DEPLOY_HOST }}
-        #   username: ${{ secrets.DEPLOY_USER }}
-        #   key: ${{ secrets.DEPLOY_SSH_KEY }}
-        #   script: |
-        #     cd /opt/kritique
-        #     git pull origin main
-        #     docker compose pull
-        #     docker compose up -d --build
-        #     docker compose run --rm backend npx prisma migrate deploy
-        run: echo "🚀 Deploy step ready — configure SSH secrets to activate"
