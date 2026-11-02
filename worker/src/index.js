@@ -8,7 +8,8 @@ const { buildReviewPrompt } = require("./prompt");
 const prisma = new PrismaClient();
 console.log("💎 Prisma client initialized");
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
-console.log(`📡 Using Redis URL: ${redisUrl}`);
+const redisAddress = new URL(redisUrl);
+console.log(`Using Redis at ${redisAddress.hostname}:${redisAddress.port || 6379}`);
 const redisClientOptions = {
   maxRetriesPerRequest: null,
   enableReadyCheck: false,

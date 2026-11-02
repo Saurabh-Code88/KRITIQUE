@@ -156,7 +156,7 @@ Render variables to provide during Blueprint setup:
 | Worker | `GROQ_MODEL` | Optional override, default is `llama-3.3-70b-versatile` |
 | Frontend | `VITE_API_URL` | `https://<backend-service>.onrender.com/api` |
 
-The backend service runs:
+The backend service runs migrations as part of startup, which also works with Render's free service plans:
 
 ```bash
 npm run db:generate
@@ -164,7 +164,7 @@ npm run db:deploy
 npm start
 ```
 
-`db:deploy` uses Prisma migrations from `backend/src/prisma/migrations`. Keep those migrations committed before every production deploy.
+`db:deploy` uses Prisma migrations from `backend/src/prisma/migrations`. Keep those migrations committed before every production deploy. Render's pre-deploy command requires a paid service plan, so the Blueprint runs migrations immediately before starting the backend.
 
 The worker is a background worker. Do not create it as a web service; it intentionally does not bind to an HTTP port.
 

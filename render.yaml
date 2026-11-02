@@ -4,8 +4,7 @@ services:
     runtime: node
     rootDir: backend
     buildCommand: npm ci --include=dev && npm run db:generate
-    preDeployCommand: npm run db:deploy
-    startCommand: npm start
+    startCommand: npm run db:deploy && npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
@@ -65,7 +64,7 @@ services:
     name: kritique-redis
     plan: free
     ipAllowList: []
-    maxmemoryPolicy: allkeys-lru
+    maxmemoryPolicy: noeviction
 
 databases:
   - name: kritique-db
